@@ -1,0 +1,41 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPathWin": "d:\\ESP32\\idf\\v5.1.4\\esp-idf",
+  "idf.toolsPathWin": "d:\\ESP32\\5_14tools",
+  "idf.pythonInstallPath": "d:\\ESP32\\5_14tools\\tools\\idf-python\\3.11.2\\python.exe",
+  "MicroPython.executeButton": [
+    {
+      "text": "▶",
+      "tooltip": "运行",
+      "alignment": "left",
+      "command": "extension.executeFile",
+      "priority": 3.5
+    }
+  ],
+  "MicroPython.syncButton": [
+    {
+      "text": "$(sync)",
+      "tooltip": "同步",
+      "alignment": "left",
+      "command": "extension.execute",
+      "priority": 4
+    }
+  ],
+  "idf.openOcdConfigs": [
+    "board/esp32s3-bridge.cfg"
+  ],
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "clangd.path": "d:\\ESP32\\5_14tools\\tools\\esp-clang\\15.0.0-23786128ae\\esp-clang\\bin\\clangd.exe",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=d:\\ESP32\\5_14tools\\tools\\xtensa-esp32s3-elf\\esp-12.2.0_20230208\\xtensa-esp32s3-elf\\bin\\xtensa-esp32s3-elf-gcc.exe",
+    "--compile-commands-dir=d:\\ESP32\\5_14code\\hello_world\\build"
+  ],
+  "idf.portWin": "COM3",
+  "idf.flashType": "UART",
+  "files.associations": {
+    "esp32_s3_szp.h": "c"
+  }
+}
