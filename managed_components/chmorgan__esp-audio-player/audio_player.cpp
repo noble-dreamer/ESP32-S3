@@ -80,6 +80,7 @@ typedef struct audio_instance {
     QueueHandle_t event_queue;
 
     /* **************** AUDIO CALLBACK **************** */
+    //函数指针绑定
     audio_player_cb_t s_audio_cb;
     void *audio_cb_usrt_ctx;
     audio_player_state_t state;
@@ -419,7 +420,8 @@ static void audio_task(void *pvParam)
             // and thus don't want to block until the next request comes in
             // in the case when there are no further requests pending
             int delay = (i->state == AUDIO_PLAYER_STATE_PLAYING) ? 0 : portMAX_DELAY;
-
+            //先PEEK看一眼，然后如果有东西才真正删掉信息，防止堆砌
+            //audio_event才是有用的信息
             int retval = xQueuePeek(i->event_queue, &audio_event, delay);
             if (pdPASS == retval) { // item on the queue, process it
                 xQueueReceive(i->event_queue, &audio_event, 0);
