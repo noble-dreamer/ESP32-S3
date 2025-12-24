@@ -1131,6 +1131,11 @@ static void btn_camback_cb(lv_event_t *e)
 {
     icon_flag = 0;
 }
+// 拍摄界面按钮处理函数
+static void btn_capture_cb(lv_event_t *e)
+{
+    ;
+}
 
 // 进入摄像头应用
 static void camera_event_handler(lv_event_t *e)
@@ -1169,6 +1174,26 @@ static void camera_event_handler(lv_event_t *e)
     lv_obj_set_style_text_font(label_back, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(label_back, lv_color_hex(0xffffff), 0);
     lv_obj_align(label_back, LV_ALIGN_CENTER, -10, 0);
+
+    // 创建拍摄按钮
+    lv_obj_t *btn_capture = lv_btn_create(icon_in_obj);
+    lv_obj_align(btn_capture, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_obj_set_size(btn_capture, 50, 50);
+    lv_obj_set_style_radius(btn_capture, 25, LV_STATE_DEFAULT);
+    lv_obj_add_flag(btn_capture, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_set_style_border_width(btn_capture, 0, 0);                         // 设置边框宽度
+    lv_obj_set_style_pad_all(btn_capture, 0, 0);                              // 设置间隙
+    lv_obj_set_style_bg_opa(btn_capture, LV_OPA_TRANSP, LV_PART_MAIN);        // 背景透明
+    lv_obj_set_style_shadow_opa(btn_capture, LV_OPA_TRANSP, LV_PART_MAIN);    // 阴影透明
+    //增加click事件    
+    lv_obj_add_event_cb(btn_capture, btn_capture_cb, LV_EVENT_CLICKED, NULL); // 添加按键处理函数
+    lv_obj_t *label_capture = lv_label_create(btn_capture);
+
+    lv_label_set_text(label_capture, LV_SYMBOL_LOOP); // 循环符号
+    lv_obj_set_style_text_font(label_capture, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(label_capture, lv_color_hex(0xffffff), 0);
+    lv_obj_align(label_capture, LV_ALIGN_CENTER, -10, 0);
 
     icon_flag = 4; // 标记已经进入第四个应用
 
