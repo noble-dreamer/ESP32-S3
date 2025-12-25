@@ -234,7 +234,9 @@ void bsp_lvgl_start(void);
 #define CAMERA_PIN_VSYNC 3
 #define CAMERA_PIN_HREF 46
 #define CAMERA_PIN_PCLK 7
+#define CAMERA_FB_COUNT 2
 
+#define JPEG_QUALITY 5
 
 #define XCLK_FREQ_HZ 24000000
 
@@ -267,7 +269,7 @@ esp_err_t bsp_spiffs_mount(void);
 #define SD_DAT0_IO     (21)
 
 #define SD_MOUNT_POINT     "/sdcard"
-
+#define PHOTO_SAVE_PATH  SD_MOUNT_POINT"/photo"
 esp_err_t bsp_sdcard_mount(void); // 挂载SD卡
 esp_err_t bsp_sdcard_unmount(void); // 卸载SD卡
 /**********************    SD卡 ↑  *********************/

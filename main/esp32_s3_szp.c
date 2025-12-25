@@ -536,8 +536,8 @@ void bsp_camera_init(void)
     config.xclk_freq_hz = XCLK_FREQ_HZ;
     config.pixel_format = PIXFORMAT_RGB565;
     config.frame_size = FRAMESIZE_QVGA;
-    config.jpeg_quality = 12;
-    config.fb_count = 2;
+    config.jpeg_quality = JPEG_QUALITY;
+    config.fb_count = CAMERA_FB_COUNT;
     config.fb_location = CAMERA_FB_IN_PSRAM;
     config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
 

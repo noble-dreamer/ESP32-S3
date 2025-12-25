@@ -1109,32 +1109,128 @@ lv_img_dsc_t img_camera_dsc = {
 };
 
 // 摄像头处理任务
+static volatile bool s_capture_requested = false;
+
 static void task_process_camera(void *arg)
 {
     while (icon_flag == 4)
     {
         camera_fb_t *frame = esp_camera_fb_get();
+        if(!frame)
+        {
+            ESP_LOGE(TAG, "Camera get failed");
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            continue;
+        }
+        // 如果请求拍照 则保存当前帧为图片
+        if (s_capture_requested)
+        {
+            s_capture_requested = false;
+            char path[128];
+            time_t now = time(NULL);
+            sniprintf(path,sizeof(path),"%s/photo/pic_%02d%02d_%02d%02d%02d.jpg",
+                    SD_MOUNT_POINT,
+                      localtime(&now)->tm_mon + 1,
+                      localtime(&now)->tm_mday,
+                      localtime(&now)->tm_hour,
+                      localtime(&now)->tm_min,
+                      localtime(&now)->tm_sec);
+            FILE *f = fopen(path, "wb");
+            if (!f){
+                ESP_LOGE(TAG, "Camera save failed");
+                continue;
+            }
+            if(frame->format == PIXFORMAT_JPEG){
+                fwrite(frame->buf, 1, frame->len, f);
+            } else {
+                // Convert to JPEG
+                uint8_t *jpg_buf = NULL;
+                size_t jpg_buf_len = 0;
+                bool jpeg_converted = frame2jpg(frame, JPEG_QUALITY, &jpg_buf, &jpg_buf_len);
+                if(!jpeg_converted){
+                    ESP_LOGE(TAG, "JPEG compression failed");
+                    fclose(f);
+                    continue;
+                }
+                fwrite(jpg_buf, 1, jpg_buf_len, f);
+                free(jpg_buf);
+            }
+            fclose(f);
+            ESP_LOGI(TAG, "Picture saved to %s", path);
+        }
         img_camera_dsc.data = frame->buf;
         lv_img_set_src(img_camera, &img_camera_dsc);
         esp_camera_fb_return(frame);
+
     }
+// 退出任务把原本的东西放进btn中
+
     esp_camera_deinit(); // 取消初始化摄像头
     lvgl_port_lock(0);
     lv_obj_del(icon_in_obj); // 删除摄像头画布
     lvgl_port_unlock();
     dvp_pwdn(1); // 摄像头进入掉电模式
+
     vTaskDelete(NULL);
+
 }
 
 // 返回主界面按钮事件处理函数
+//lvgl任务，如果在这这里面删除，可能上面会的task_camera还在运行，导致冲突崩溃
+
 static void btn_camback_cb(lv_event_t *e)
 {
+    // esp_camera_deinit(); // 取消初始化摄像头
+    // lvgl_port_lock(0);
+    // lv_obj_del(icon_in_obj); // 删除摄像头画布
+    // lvgl_port_unlock();
+    // dvp_pwdn(1); // 摄像头进入掉电模式
     icon_flag = 0;
 }
 // 拍摄界面按钮处理函数
 static void btn_capture_cb(lv_event_t *e)
 {
-    ;
+    s_capture_requested = true;
+    // camera_fb_t *fb = esp_camera_fb_get();
+    // if (!fb)
+    // {
+    //     ESP_LOGE(TAG, "Camera capture failed");
+    //     return;
+    // }
+    // char path[128];
+    // time_t now = time(NULL);
+    // sniprintf(path,sizeof(path),"%s/photo/pic_%02d%02d_%02d%02d%02d.jpg",
+    //         SD_MOUNT_POINT,
+    //           localtime(&now)->tm_mon + 1,
+    //           localtime(&now)->tm_mday,
+    //           localtime(&now)->tm_hour,
+    //           localtime(&now)->tm_min,
+    //           localtime(&now)->tm_sec);
+    // FILE *f = fopen(path, "wb");
+    // if (!f){
+    //     ESP_LOGE(TAG, "Camera save failed");
+    //     esp_camera_fb_return(fb);
+    //     return;
+    // }
+    // if(fb->format == PIXFORMAT_JPEG){
+    //     fwrite(fb->buf, 1, fb->len, f);
+    // } else {
+    //     // Convert to JPEG
+    //     uint8_t *jpg_buf = NULL;
+    //     size_t jpg_buf_len = 0;
+    //     bool jpeg_converted = frame2jpg(fb, JPEG_QUALITY, &jpg_buf, &jpg_buf_len);
+    //     if(!jpeg_converted){
+    //         ESP_LOGE(TAG, "JPEG compression failed");
+    //         fclose(f);
+    //         esp_camera_fb_return(fb);
+    //         return;
+    //     }
+    //     fwrite(jpg_buf, 1, jpg_buf_len, f);
+    //     free(jpg_buf);
+    // }
+    // fclose(f);
+    // esp_camera_fb_return(fb);
+    // ESP_LOGE(TAG, "Picture saved to %s", path);
 }
 
 // 进入摄像头应用
@@ -1176,24 +1272,42 @@ static void camera_event_handler(lv_event_t *e)
     lv_obj_align(label_back, LV_ALIGN_CENTER, -10, 0);
 
     // 创建拍摄按钮
-    lv_obj_t *btn_capture = lv_btn_create(icon_in_obj);
-    lv_obj_align(btn_capture, LV_ALIGN_BOTTOM_MID, 0, 0);
-    lv_obj_set_size(btn_capture, 50, 50);
-    lv_obj_set_style_radius(btn_capture, 25, LV_STATE_DEFAULT);
-    lv_obj_add_flag(btn_capture, LV_OBJ_FLAG_CLICKABLE);
+    static lv_style_t style_cap;
+    static lv_style_t style_cap_pr;
+    static bool style_cap_inited = false;
+    if (!style_cap_inited)
+    {
+        style_cap_inited = true;
+        lv_style_init(&style_cap);
+        lv_style_set_radius(&style_cap, 25);
+        lv_style_set_bg_color(&style_cap, lv_color_hex(0x000000));
+        lv_style_set_bg_opa(&style_cap, LV_OPA_40);
+        lv_style_set_border_width(&style_cap, 2);
+        lv_style_set_border_color(&style_cap, lv_color_hex(0xffffff));
+        lv_style_set_shadow_width(&style_cap, 12);
+        lv_style_set_shadow_color(&style_cap, lv_color_hex(0x000000));
+        lv_style_set_shadow_opa(&style_cap, LV_OPA_40);
 
-    lv_obj_set_style_border_width(btn_capture, 0, 0);                         // 设置边框宽度
-    lv_obj_set_style_pad_all(btn_capture, 0, 0);                              // 设置间隙
-    lv_obj_set_style_bg_opa(btn_capture, LV_OPA_TRANSP, LV_PART_MAIN);        // 背景透明
-    lv_obj_set_style_shadow_opa(btn_capture, LV_OPA_TRANSP, LV_PART_MAIN);    // 阴影透明
-    //增加click事件    
-    lv_obj_add_event_cb(btn_capture, btn_capture_cb, LV_EVENT_CLICKED, NULL); // 添加按键处理函数
+        lv_style_init(&style_cap_pr);
+        lv_style_set_bg_color(&style_cap_pr, lv_color_hex(0xffffff));
+        lv_style_set_bg_opa(&style_cap_pr, LV_OPA_60);
+        lv_style_set_border_color(&style_cap_pr, lv_color_hex(0x000000));
+    }
+
+    lv_obj_t *btn_capture = lv_btn_create(icon_in_obj);
+    lv_obj_align(btn_capture, LV_ALIGN_BOTTOM_MID, 0, -6);
+    lv_obj_set_size(btn_capture, 56, 56);
+    lv_obj_add_style(btn_capture, &style_cap, LV_STATE_DEFAULT);
+    lv_obj_add_style(btn_capture, &style_cap_pr, LV_STATE_PRESSED);
+    lv_obj_clear_flag(btn_capture, LV_OBJ_FLAG_CHECKABLE);
+    lv_obj_add_event_cb(btn_capture, btn_capture_cb, LV_EVENT_CLICKED, NULL);
+
     lv_obj_t *label_capture = lv_label_create(btn_capture);
 
     lv_label_set_text(label_capture, LV_SYMBOL_LOOP); // 循环符号
     lv_obj_set_style_text_font(label_capture, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(label_capture, lv_color_hex(0xffffff), 0);
-    lv_obj_align(label_capture, LV_ALIGN_CENTER, -10, 0);
+    lv_obj_center(label_capture);
 
     icon_flag = 4; // 标记已经进入第四个应用
 
