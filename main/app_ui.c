@@ -26,6 +26,7 @@ int icon_flag;             // 标记现在进入哪个应用 在主界面时为0
 
 /*********************** 开机界面 ****************************/
 lv_obj_t *tanglong_img;
+
 // // 设置角度的回调函数
 // static void set_angle(void * img, int32_t v)
 // {
@@ -260,6 +261,7 @@ lv_obj_t *volume_slider;
 
 lv_obj_t *music_title_label;
 lv_obj_t *btn_music_back;
+
 
 // 播放指定序号的音乐
 static void play_index(int index)
@@ -1159,7 +1161,9 @@ static void task_process_camera(void *arg)
             ESP_LOGI(TAG, "Picture saved to %s", path);
         }
         img_camera_dsc.data = frame->buf;
+        lvgl_port_lock(0);
         lv_img_set_src(img_camera, &img_camera_dsc);
+        lvgl_port_unlock();
         esp_camera_fb_return(frame);
 
     }
@@ -2125,8 +2129,170 @@ static void btset_event_handler(lv_event_t *e)
     icon_flag = 6; // 标记已经进入第6个应用
 }
 
-/******************************** 主界面  ******************************/
+/******************************** 第7个图标 图库设置 应用程序***********************************************************************************/
+lv_obj_t *pic_title_label;
+lv_obj_t *btn_pic_back;
+lv_obj_t *img_in_obj;
+static char g_img_path[128];
 
+static file_iterator_instance_t *img_file_iterator = NULL;
+
+static void btn_pic_back_cb(lv_event_t *e)
+{
+    lv_obj_del(icon_in_obj);
+    icon_flag = 0;
+}
+
+static void btn_img_prev_next_cb(lv_event_t *e)
+{
+    bool is_next = (bool)lv_event_get_user_data(e);
+    if (is_next)
+    {
+        ESP_LOGI(TAG, "Next Image");
+        file_iterator_next(img_file_iterator);
+
+    }
+    else
+    {
+        ESP_LOGI(TAG, "Previous Image");
+        file_iterator_prev(img_file_iterator);
+
+    }
+    int index = file_iterator_get_index(img_file_iterator);
+    ESP_LOGI(TAG, "Current Image Index: %d", index);
+    if (file_iterator_get_full_path_from_index(img_file_iterator, index, g_img_path, sizeof(g_img_path))) {
+        lvgl_port_lock(0);
+        lv_img_set_src(img_in_obj, g_img_path);
+        lv_obj_align(img_in_obj, LV_ALIGN_CENTER, 0, 10);
+        lvgl_port_unlock();
+    } else {
+        ESP_LOGE(TAG, "Failed to get full image path for index %d", index);
+    }
+
+}
+void app_pic_browser(void){
+    lvgl_port_lock(0);
+    ui_button_style_init(); // 初始化按键风格
+    // 创建下一张图片按钮
+    lv_obj_t *btn_next_pic = lv_btn_create(icon_in_obj);
+    lv_obj_set_size(btn_next_pic, 30, 30);
+    lv_obj_set_style_radius(btn_next_pic, 15, LV_STATE_DEFAULT);
+    lv_obj_clear_flag(btn_next_pic, LV_OBJ_FLAG_CHECKABLE); // 取消检查属性
+    lv_obj_align(btn_next_pic, LV_ALIGN_BOTTOM_RIGHT, -10, -10);
+
+    lv_obj_add_style(btn_next_pic, &ui_button_styles()->style_focus_no_outline, LV_STATE_FOCUS_KEY);
+    lv_obj_add_style(btn_next_pic, &ui_button_styles()->style_focus_no_outline, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn_next_pic, &ui_button_styles()->style_bg, LV_STATE_FOCUS_KEY);
+    lv_obj_add_style(btn_next_pic, &ui_button_styles()->style_bg, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn_next_pic, &ui_button_styles()->style_bg, LV_STATE_DEFAULT);
+    
+    lv_obj_t *label_next = lv_label_create(btn_next_pic);
+    lv_label_set_text_static(label_next, LV_SYMBOL_NEXT);
+    lv_obj_set_style_text_font(label_next, &lv_font_montserrat_24, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(label_next, lv_color_make(0, 0, 0), LV_STATE_DEFAULT);
+    lv_obj_center(label_next);
+    lv_obj_set_user_data(btn_next_pic, (void *)label_next);
+    lv_obj_add_event_cb(btn_next_pic, btn_img_prev_next_cb, LV_EVENT_CLICKED, (void *)true);
+
+    // 创建上一张图片按钮
+    lv_obj_t *btn_prev_pic = lv_btn_create(icon_in_obj);
+    lv_obj_set_size(btn_prev_pic, 30, 30);
+    lv_obj_set_style_radius(btn_prev_pic, 15, LV_STATE_DEFAULT);
+    lv_obj_clear_flag(btn_prev_pic, LV_OBJ_FLAG_CHECKABLE); // 取消检查属性
+    lv_obj_align(btn_prev_pic, LV_ALIGN_BOTTOM_LEFT, 10, -10);
+
+    lv_obj_add_style(btn_prev_pic, &ui_button_styles()->style_focus_no_outline, LV_STATE_FOCUS_KEY);
+    lv_obj_add_style(btn_prev_pic, &ui_button_styles()->style_focus_no_outline, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn_prev_pic, &ui_button_styles()->style_bg, LV_STATE_FOCUS_KEY);
+    lv_obj_add_style(btn_prev_pic, &ui_button_styles()->style_bg, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn_prev_pic, &ui_button_styles()->style_bg, LV_STATE_DEFAULT);
+    
+    lv_obj_t *label_prev = lv_label_create(btn_prev_pic);
+    lv_label_set_text_static(label_prev, LV_SYMBOL_PREV);
+    lv_obj_set_style_text_font(label_prev, &lv_font_montserrat_24, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(label_prev, lv_color_make(0, 0, 0), LV_STATE_DEFAULT);
+    lv_obj_center(label_prev);
+    lv_obj_set_user_data(btn_prev_pic, (void *)label_prev);
+    lv_obj_add_event_cb(btn_prev_pic, btn_img_prev_next_cb, LV_EVENT_CLICKED, (void *)false);
+    lvgl_port_unlock();
+
+}
+
+static void pic_event_handler(lv_event_t *e)
+{
+    // 创建一个界面对象
+    static lv_style_t style;
+    lv_style_init(&style);
+    lv_style_set_radius(&style, 10);
+    lv_style_set_bg_opa(&style, LV_OPA_COVER);
+    lv_style_set_bg_color(&style, lv_color_hex(0xffffff));
+    lv_style_set_border_width(&style, 0);
+    lv_style_set_pad_all(&style, 0);
+    lv_style_set_width(&style, 320);
+    lv_style_set_height(&style, 240);
+
+    icon_in_obj = lv_obj_create(lv_scr_act());
+    lv_obj_add_style(icon_in_obj, &style, 0);
+    //创建标题背景
+    lv_obj_t *pic_title = lv_obj_create(icon_in_obj);
+    lv_obj_set_size(pic_title, 320, 40);
+    lv_obj_set_style_pad_all(pic_title, 0, 0); // 设置间隙
+    lv_obj_align(pic_title, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_set_style_bg_color(pic_title, lv_color_hex(0x808080), 0);
+    // 显示标题
+    pic_title_label = lv_label_create(pic_title);
+    lv_label_set_text(pic_title_label, "图片浏览器");
+    lv_obj_set_style_text_color(pic_title_label, lv_color_hex(0xffffff), 0);
+    lv_obj_set_style_text_font(pic_title_label, &font_alipuhui20, 0);
+    lv_obj_align(pic_title_label, LV_ALIGN_CENTER, 0, 0);
+
+    // 显示后退按钮
+    btn_pic_back = lv_btn_create(pic_title);
+    lv_obj_align(btn_pic_back, LV_ALIGN_LEFT_MID, 0, 0);
+    lv_obj_set_size(btn_pic_back, 60, 30);
+    lv_obj_set_style_border_width(btn_pic_back, 0, 0);                          // 设置边框宽度
+    lv_obj_set_style_pad_all(btn_pic_back, 0, 0);                               //
+    lv_obj_set_style_bg_opa(btn_pic_back, LV_OPA_TRANSP, LV_PART_MAIN);         // 背景透明
+    lv_obj_set_style_shadow_opa(btn_pic_back, LV_OPA_TRANSP, LV_PART_MAIN);     // 阴影透明
+    lv_obj_add_event_cb(btn_pic_back, btn_pic_back_cb, LV_EVENT_CLICKED, NULL); // 添加按键处理函数
+
+    lv_obj_t *label_back = lv_label_create(btn_pic_back);
+    lv_label_set_text(label_back, LV_SYMBOL_LEFT); // 按键上显示左
+    lv_obj_set_style_text_font(label_back, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(label_back, lv_color_hex(0xffffff), 0);
+    lv_obj_align(label_back, LV_ALIGN_CENTER, -10, 0);
+
+    // 确保文件迭代器存在
+    if (img_file_iterator == NULL) {
+        img_file_iterator = file_iterator_new(SD_MOUNT_POINT "/photo");
+        assert(img_file_iterator != NULL);
+    }
+    // 创建图片对象
+    img_in_obj = lv_img_create(icon_in_obj);
+    lv_obj_align(img_in_obj, LV_ALIGN_CENTER, 0, 10);
+
+    // 显示第一张图片（使用完整路径）
+    if (img_file_iterator->count > 0) {
+        int index = file_iterator_get_index(img_file_iterator);
+        if (!file_iterator_get_full_path_from_index(img_file_iterator, index, g_img_path, sizeof(g_img_path))) {
+            ESP_LOGE(TAG, "Failed to get full image path for initial index %d", index);
+        } else {
+            ESP_LOGI(TAG, "Initial image path: %s", g_img_path);
+            lvgl_port_lock(0);
+            lv_img_set_src(img_in_obj, g_img_path);
+            lvgl_port_unlock();
+        }
+    } else {
+        ESP_LOGW(TAG, "No images found in %s/photo", SD_MOUNT_POINT);
+    }
+    icon_flag = 7; // 标记已经进入第7个应用
+    app_pic_browser();
+} 
+
+
+
+/******************************** 主界面  ******************************/
+extern const lv_img_dsc_t img_pic_icon;
 void lv_main_page(void)
 {
     lvgl_port_lock(0);
@@ -2149,6 +2315,10 @@ void lv_main_page(void)
 
     main_obj = lv_obj_create(lv_scr_act());
     lv_obj_add_style(main_obj, &style, 0);
+    // 允许主页纵向滚动，并按页吸附
+    lv_obj_set_scroll_dir(main_obj, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(main_obj, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_set_scroll_snap_y(main_obj, LV_SCROLL_SNAP_START);
 
     // 显示右上角符号
     lv_obj_t *sylbom_label = lv_label_create(main_obj);
@@ -2247,6 +2417,19 @@ void lv_main_page(void)
     LV_IMG_DECLARE(img_btset_icon);
     lv_img_set_src(img6, &img_btset_icon);
     lv_obj_align(img6, LV_ALIGN_CENTER, 0, 0);
+
+    // 创建第7个应用图标（位于第三行，需下滑可见）
+    lv_obj_t *icon7 = lv_btn_create(main_obj);
+    lv_obj_add_style(icon7, &btn_style, 0);
+    lv_obj_set_style_bg_color(icon7, lv_color_hex(0x3c8dbc), 0);
+    lv_obj_set_pos(icon7, 15, 244); // 第三行起始位置（超过 240 高度）
+
+    lv_obj_add_event_cb(icon7, pic_event_handler, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t *img7 = lv_img_create(icon7);
+    LV_IMG_DECLARE(img_pic_icon);
+    lv_img_set_src(img7, &img_pic_icon);
+    lv_obj_align(img7, LV_ALIGN_CENTER, 0, 0);
 
     lvgl_port_unlock();
 }

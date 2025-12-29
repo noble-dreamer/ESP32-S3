@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "handheld",
-    "project_version":    "1",
+    "project_version":    "f5a19a9-dirty",
     "project_path":       "D:/ESP32/5_14code/14-handheld",
     "idf_path":           "D:/ESP32/idf/v5.1.4/esp-idf",
     "build_dir":          "D:/ESP32/5_14code/14-handheld/build",
@@ -970,7 +970,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [ "chmorgan__esp-audio-player", "chmorgan__esp-file-iterator", "espressif__esp-sr", "espressif__esp32-camera", "espressif__esp_codec_dev", "espressif__esp_lcd_touch_ft5x06", "espressif__esp_lvgl_port", "lvgl__lvgl" ],
             "file": "D:/ESP32/5_14code/14-handheld/build/esp-idf/main/libmain.a",
-            "sources": [ "D:/ESP32/5_14code/14-handheld/main/tanglong.c", "D:/ESP32/5_14code/14-handheld/main/esp32_s3_szp.c", "D:/ESP32/5_14code/14-handheld/main/main.c", "D:/ESP32/5_14code/14-handheld/main/app_ui.c", "D:/ESP32/5_14code/14-handheld/main/assets/image_lckfb_logo.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_att_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_btset_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_camera_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_music_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_sd_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_wifiset_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/font_alipuhui20.c", "D:/ESP32/5_14code/14-handheld/main/bt/ble_hidd_demo.c", "D:/ESP32/5_14code/14-handheld/main/bt/esp_hidd_prf_api.c", "D:/ESP32/5_14code/14-handheld/main/bt/hid_dev.c", "D:/ESP32/5_14code/14-handheld/main/bt/hid_device_le_prf.c", "D:/ESP32/5_14code/14-handheld/build/sword.pcm.S" ],
+            "sources": [ "D:/ESP32/5_14code/14-handheld/main/tanglong.c", "D:/ESP32/5_14code/14-handheld/main/esp32_s3_szp.c", "D:/ESP32/5_14code/14-handheld/main/main.c", "D:/ESP32/5_14code/14-handheld/main/app_ui.c", "D:/ESP32/5_14code/14-handheld/main/assets/image_lckfb_logo.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_att_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_pic_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_btset_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_camera_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_music_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_sd_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/img_wifiset_icon.c", "D:/ESP32/5_14code/14-handheld/main/assets/font_alipuhui20.c", "D:/ESP32/5_14code/14-handheld/main/bt/ble_hidd_demo.c", "D:/ESP32/5_14code/14-handheld/main/bt/esp_hidd_prf_api.c", "D:/ESP32/5_14code/14-handheld/main/bt/hid_dev.c", "D:/ESP32/5_14code/14-handheld/main/bt/hid_device_le_prf.c", "D:/ESP32/5_14code/14-handheld/build/sword.pcm.S" ],
             "include_dirs": [ ".", "bt" ]
         },
         "mbedtls": {

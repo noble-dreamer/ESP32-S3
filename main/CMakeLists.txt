@@ -1,6 +1,7 @@
 idf_component_register(SRCS "tanglong.c" "esp32_s3_szp.c" "main.c" "app_ui.c"
                        SRCS "assets/image_lckfb_logo.c"
                        SRCS "assets/img_att_icon.c"
+                       SRCS "assets/img_pic_icon.c"
                        SRCS "assets/img_btset_icon.c"
                        SRCS "assets/img_camera_icon.c"
                        SRCS "assets/img_music_icon.c"
