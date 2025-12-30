@@ -299,7 +299,7 @@ ESP_PLATFORM:UNINITIALIZED=1
 GEN_FILES:BOOL=
 
 //Git command line client
-GIT_EXECUTABLE:FILEPATH=D:/ESP32/5_14tools/tools/idf-git/2.39.2/cmd/git.exe
+GIT_EXECUTABLE:FILEPATH=D:/lzx/Git/cmd/git.exe
 
 //IDF Build Target
 IDF_TARGET:STRING=esp32s3
@@ -575,7 +575,7 @@ CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS
 C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS:INTERNAL=1
 //Details about finding Git
-FIND_PACKAGE_MESSAGE_DETAILS_Git:INTERNAL=[D:/ESP32/5_14tools/tools/idf-git/2.39.2/cmd/git.exe][v2.39.2.windows.1()]
+FIND_PACKAGE_MESSAGE_DETAILS_Git:INTERNAL=[D:/lzx/Git/cmd/git.exe][v2.36.1.windows.1()]
 //Details about finding Python3
 FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[d:/ESP32/5_14tools/python_env/idf5.1_py3.11_env/Scripts/python.exe][cfound components: Interpreter ][v3.11.2()]
 //ADVANCED property for variable: GIT_EXECUTABLE
