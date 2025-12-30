@@ -14,6 +14,7 @@
 #include "esp_netif_sntp.h"
 #include "esp_sntp.h"
 #include <ctype.h>
+#include "img_converters.h"  // 位于 esp32-camera 组件
 
 static const char *TAG = "app_ui";
 // #define LV_USE_GIF 1
@@ -1113,6 +1114,37 @@ lv_img_dsc_t img_camera_dsc = {
 // 摄像头处理任务
 static volatile bool s_capture_requested = false;
 
+static bool save_frame_as_bmp(const char *path, const camera_fb_t *frame)
+{
+    if (!frame) return false;
+
+    uint8_t *bmp_buf = NULL;
+    size_t bmp_len = 0;
+    bool ret = fmt2bmp(frame->buf,
+                             frame->len,
+                             frame->width,
+                             frame->height,
+                             frame->format,   // 这里传 PIXFORMAT_RGB565
+                             &bmp_buf,
+                             &bmp_len
+                            );
+    if (!ret) {
+        ESP_LOGE(TAG, "fmt2bmp failed");
+        return false;
+    }
+
+    FILE *f = fopen(path, "wb");
+    if (!f) {
+        ESP_LOGE(TAG, "Open bmp fail %s", path);
+        free(bmp_buf);
+        return false;
+    }
+    fwrite(bmp_buf, 1, bmp_len, f);
+    fclose(f);
+    free(bmp_buf);
+    return true;
+}
+
 static void task_process_camera(void *arg)
 {
     while (icon_flag == 4)
@@ -1130,35 +1162,19 @@ static void task_process_camera(void *arg)
             s_capture_requested = false;
             char path[128];
             time_t now = time(NULL);
-            sniprintf(path,sizeof(path),"%s/photo/pic_%02d%02d_%02d%02d%02d.jpg",
+            sniprintf(path,sizeof(path),"%s/photo/pic_%02d%02d_%02d%02d%02d.bmp",
                     SD_MOUNT_POINT,
                       localtime(&now)->tm_mon + 1,
                       localtime(&now)->tm_mday,
                       localtime(&now)->tm_hour,
                       localtime(&now)->tm_min,
                       localtime(&now)->tm_sec);
-            FILE *f = fopen(path, "wb");
-            if (!f){
-                ESP_LOGE(TAG, "Camera save failed");
-                continue;
-            }
-            if(frame->format == PIXFORMAT_JPEG){
-                fwrite(frame->buf, 1, frame->len, f);
+
+            if (!save_frame_as_bmp(path, frame)) {
+                ESP_LOGE(TAG, "Save BMP failed");
             } else {
-                // Convert to JPEG
-                uint8_t *jpg_buf = NULL;
-                size_t jpg_buf_len = 0;
-                bool jpeg_converted = frame2jpg(frame, JPEG_QUALITY, &jpg_buf, &jpg_buf_len);
-                if(!jpeg_converted){
-                    ESP_LOGE(TAG, "JPEG compression failed");
-                    fclose(f);
-                    continue;
-                }
-                fwrite(jpg_buf, 1, jpg_buf_len, f);
-                free(jpg_buf);
+                ESP_LOGI(TAG, "Picture saved to %s", path);
             }
-            fclose(f);
-            ESP_LOGI(TAG, "Picture saved to %s", path);
         }
         img_camera_dsc.data = frame->buf;
         lvgl_port_lock(0);
@@ -1184,57 +1200,12 @@ static void task_process_camera(void *arg)
 
 static void btn_camback_cb(lv_event_t *e)
 {
-    // esp_camera_deinit(); // 取消初始化摄像头
-    // lvgl_port_lock(0);
-    // lv_obj_del(icon_in_obj); // 删除摄像头画布
-    // lvgl_port_unlock();
-    // dvp_pwdn(1); // 摄像头进入掉电模式
     icon_flag = 0;
 }
 // 拍摄界面按钮处理函数
 static void btn_capture_cb(lv_event_t *e)
 {
     s_capture_requested = true;
-    // camera_fb_t *fb = esp_camera_fb_get();
-    // if (!fb)
-    // {
-    //     ESP_LOGE(TAG, "Camera capture failed");
-    //     return;
-    // }
-    // char path[128];
-    // time_t now = time(NULL);
-    // sniprintf(path,sizeof(path),"%s/photo/pic_%02d%02d_%02d%02d%02d.jpg",
-    //         SD_MOUNT_POINT,
-    //           localtime(&now)->tm_mon + 1,
-    //           localtime(&now)->tm_mday,
-    //           localtime(&now)->tm_hour,
-    //           localtime(&now)->tm_min,
-    //           localtime(&now)->tm_sec);
-    // FILE *f = fopen(path, "wb");
-    // if (!f){
-    //     ESP_LOGE(TAG, "Camera save failed");
-    //     esp_camera_fb_return(fb);
-    //     return;
-    // }
-    // if(fb->format == PIXFORMAT_JPEG){
-    //     fwrite(fb->buf, 1, fb->len, f);
-    // } else {
-    //     // Convert to JPEG
-    //     uint8_t *jpg_buf = NULL;
-    //     size_t jpg_buf_len = 0;
-    //     bool jpeg_converted = frame2jpg(fb, JPEG_QUALITY, &jpg_buf, &jpg_buf_len);
-    //     if(!jpeg_converted){
-    //         ESP_LOGE(TAG, "JPEG compression failed");
-    //         fclose(f);
-    //         esp_camera_fb_return(fb);
-    //         return;
-    //     }
-    //     fwrite(jpg_buf, 1, jpg_buf_len, f);
-    //     free(jpg_buf);
-    // }
-    // fclose(f);
-    // esp_camera_fb_return(fb);
-    // ESP_LOGE(TAG, "Picture saved to %s", path);
 }
 
 // 进入摄像头应用
@@ -2134,6 +2105,19 @@ lv_obj_t *pic_title_label;
 lv_obj_t *btn_pic_back;
 lv_obj_t *img_in_obj;
 static char g_img_path[128];
+static char g_lv_img_path[140];
+
+#define LVGL_STDIO_DRIVE "A:"
+
+static void set_img_src_from_fs_path(const char *fs_path)
+{
+    if (!fs_path || fs_path[0] == '\0') {
+        return;
+    }
+    /* Build LVGL path with stdio drive letter so LVGL can open the file */
+    lv_snprintf(g_lv_img_path, sizeof(g_lv_img_path), LVGL_STDIO_DRIVE "%s", fs_path);
+    lv_img_set_src(img_in_obj, g_lv_img_path);
+}
 
 static file_iterator_instance_t *img_file_iterator = NULL;
 
@@ -2162,7 +2146,7 @@ static void btn_img_prev_next_cb(lv_event_t *e)
     ESP_LOGI(TAG, "Current Image Index: %d", index);
     if (file_iterator_get_full_path_from_index(img_file_iterator, index, g_img_path, sizeof(g_img_path))) {
         lvgl_port_lock(0);
-        lv_img_set_src(img_in_obj, g_img_path);
+        set_img_src_from_fs_path(g_img_path);
         lv_obj_align(img_in_obj, LV_ALIGN_CENTER, 0, 10);
         lvgl_port_unlock();
     } else {
@@ -2222,6 +2206,7 @@ static void pic_event_handler(lv_event_t *e)
 {
     // 创建一个界面对象
     static lv_style_t style;
+    img_file_iterator = NULL; // 初始化文件迭代器指针
     lv_style_init(&style);
     lv_style_set_radius(&style, 10);
     lv_style_set_bg_opa(&style, LV_OPA_COVER);
@@ -2252,8 +2237,8 @@ static void pic_event_handler(lv_event_t *e)
     lv_obj_set_size(btn_pic_back, 60, 30);
     lv_obj_set_style_border_width(btn_pic_back, 0, 0);                          // 设置边框宽度
     lv_obj_set_style_pad_all(btn_pic_back, 0, 0);                               //
-    lv_obj_set_style_bg_opa(btn_pic_back, LV_OPA_TRANSP, LV_PART_MAIN);         // 背景透明
-    lv_obj_set_style_shadow_opa(btn_pic_back, LV_OPA_TRANSP, LV_PART_MAIN);     // 阴影透明
+    lv_obj_set_style_bg_opa(btn_pic_back, LV_OPA_60, LV_PART_MAIN);         // 背景透明
+    lv_obj_set_style_shadow_opa(btn_pic_back, LV_OPA_60, LV_PART_MAIN);     // 阴影透明
     lv_obj_add_event_cb(btn_pic_back, btn_pic_back_cb, LV_EVENT_CLICKED, NULL); // 添加按键处理函数
 
     lv_obj_t *label_back = lv_label_create(btn_pic_back);
@@ -2279,7 +2264,7 @@ static void pic_event_handler(lv_event_t *e)
         } else {
             ESP_LOGI(TAG, "Initial image path: %s", g_img_path);
             lvgl_port_lock(0);
-            lv_img_set_src(img_in_obj, g_img_path);
+            set_img_src_from_fs_path(g_img_path);
             lvgl_port_unlock();
         }
     } else {

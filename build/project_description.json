@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "handheld",
-    "project_version":    "f5a19a9-dirty",
+    "project_version":    "3eccadd-dirty",
     "project_path":       "D:/ESP32/5_14code/14-handheld",
     "idf_path":           "D:/ESP32/idf/v5.1.4/esp-idf",
     "build_dir":          "D:/ESP32/5_14code/14-handheld/build",

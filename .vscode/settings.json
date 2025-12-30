@@ -33,7 +33,7 @@
     "--query-driver=d:\\ESP32\\5_14tools\\tools\\xtensa-esp32s3-elf\\esp-12.2.0_20230208\\xtensa-esp32s3-elf\\bin\\xtensa-esp32s3-elf-gcc.exe",
     "--compile-commands-dir=d:\\ESP32\\5_14code\\hello_world\\build"
   ],
-  "idf.portWin": "COM9",
+  "idf.portWin": "COM5",
   "idf.flashType": "UART",
   "files.associations": {
     "esp32_s3_szp.h": "c"

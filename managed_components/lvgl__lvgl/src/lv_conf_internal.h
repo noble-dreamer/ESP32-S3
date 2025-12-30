@@ -1983,7 +1983,7 @@
     #ifdef CONFIG_LV_USE_FS_STDIO
         #define LV_USE_FS_STDIO CONFIG_LV_USE_FS_STDIO
     #else
-        #define LV_USE_FS_STDIO 0
+        #define LV_USE_FS_STDIO 'S'
     #endif
 #endif
 #if LV_USE_FS_STDIO
@@ -1998,14 +1998,14 @@
         #ifdef CONFIG_LV_FS_STDIO_PATH
             #define LV_FS_STDIO_PATH CONFIG_LV_FS_STDIO_PATH
         #else
-            #define LV_FS_STDIO_PATH ""         /*Set the working directory. File/directory paths will be appended to it.*/
+            #define LV_FS_STDIO_PATH "/sdcard"        /*Set the working directory. File/directory paths will be appended to it.*/
         #endif
     #endif
     #ifndef LV_FS_STDIO_CACHE_SIZE
         #ifdef CONFIG_LV_FS_STDIO_CACHE_SIZE
             #define LV_FS_STDIO_CACHE_SIZE CONFIG_LV_FS_STDIO_CACHE_SIZE
         #else
-            #define LV_FS_STDIO_CACHE_SIZE 0    /*>0 to cache this number of bytes in lv_fs_read()*/
+            #define LV_FS_STDIO_CACHE_SIZE 128    /*>0 to cache this number of bytes in lv_fs_read()*/
         #endif
     #endif
 #endif

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include "esp32_s3_szp.h"
+#include "lvgl.h"
+#include "src/extra/lv_extra.h"
 
 static const char *TAG = "esp32_s3_szp";
 
@@ -280,6 +282,158 @@ static lv_disp_t *disp;      // 指向液晶屏
 static lv_indev_t *disp_indev = NULL; // 指向触摸屏
 
 //=================================================================================================
+// LVGL 文件系统：将 SD FATFS 映射为盘符 S:
+// static lv_fs_res_t sd_fs_open(lv_fs_drv_t *drv, void *file_p, const char *path, lv_fs_mode_t mode)
+// {
+//     LV_UNUSED(drv);
+//     const char *flags = (mode == LV_FS_MODE_WR) ? "wb" : (mode == (LV_FS_MODE_WR | LV_FS_MODE_RD) ? "rb+" : "rb");
+
+//     char real_path[256];
+//     if (path && path[0] == '/') {
+//         snprintf(real_path, sizeof(real_path), "%s%s", SD_MOUNT_POINT, path);
+//     } else {
+//         snprintf(real_path, sizeof(real_path), "%s/%s", SD_MOUNT_POINT, path ? path : "");
+//     }
+
+//     FILE *f = fopen(real_path, flags);
+//     if (!f) {
+//         ESP_LOGE(TAG, "sd_fs_open failed: %s", real_path);
+//         return LV_FS_RES_NOT_EX;
+//     }
+//     *(FILE **)file_p = f;
+//     return LV_FS_RES_OK;
+// }
+
+// static lv_fs_res_t sd_fs_close(lv_fs_drv_t *drv, void *file_p)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     fclose(f);
+//     return LV_FS_RES_OK;
+// }
+
+// static lv_fs_res_t sd_fs_read(lv_fs_drv_t *drv, void *file_p, void *buf, uint32_t btr, uint32_t *br)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     size_t n = fread(buf, 1, btr, f);
+//     if (br) *br = (uint32_t)n;
+//     return ferror(f) ? LV_FS_RES_FS_ERR : LV_FS_RES_OK;
+// }
+
+// static lv_fs_res_t sd_fs_seek(lv_fs_drv_t *drv, void *file_p, uint32_t pos, lv_fs_whence_t whence)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     int origin = (whence == LV_FS_SEEK_SET) ? SEEK_SET : (whence == LV_FS_SEEK_CUR ? SEEK_CUR : SEEK_END);
+//     return fseek(f, (long)pos, origin) == 0 ? LV_FS_RES_OK : LV_FS_RES_FS_ERR;
+// }
+
+// static lv_fs_res_t sd_fs_tell(lv_fs_drv_t *drv, void *file_p, uint32_t *pos_p)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     long p = ftell(f);
+//     if (p < 0) return LV_FS_RES_FS_ERR;
+//     *pos_p = (uint32_t)p;
+//     return LV_FS_RES_OK;
+// }
+
+// static void lv_fs_register_sd(void)
+// {
+//     static lv_fs_drv_t drv;
+//     lv_fs_drv_init(&drv);
+//     drv.letter = 'S';                 // 使用 "S:" 作为盘符
+//     drv.open_cb = sd_fs_open;
+//     drv.close_cb = sd_fs_close;
+//     drv.read_cb = sd_fs_read;
+//     drv.seek_cb = sd_fs_seek;
+//     drv.tell_cb = sd_fs_tell;
+//     // 如需写能力可添加 drv.write_cb
+//     lv_fs_drv_register(&drv);
+// }
+
+// //=================================================================================================
+
+// // LVGL 文件系统：将 SPIFFS 映射为盘符 P:
+// static lv_fs_res_t spiffs_fs_open(lv_fs_drv_t *drv, void *file_p, const char *path, lv_fs_mode_t mode)
+// {
+//     LV_UNUSED(drv);
+//     const char *flags = (mode == LV_FS_MODE_WR) ? "wb" : (mode == (LV_FS_MODE_WR | LV_FS_MODE_RD) ? "rb+" : "rb");
+
+//     char real_path[256];
+//     if (path && path[0] == '/') {
+//         snprintf(real_path, sizeof(real_path), "%s%s", SPIFFS_BASE, path);
+//     } else {
+//         snprintf(real_path, sizeof(real_path), "%s/%s", SPIFFS_BASE, path ? path : "");
+//     }
+
+//     FILE *f = fopen(real_path, flags);
+//     if (!f) {
+//         ESP_LOGE(TAG, "spiffs_fs_open failed: %s", real_path);
+//         return LV_FS_RES_NOT_EX;
+//     }
+//     *(FILE **)file_p = f;
+//     return LV_FS_RES_OK;
+// }
+
+// static lv_fs_res_t spiffs_fs_close(lv_fs_drv_t *drv, void *file_p)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     fclose(f);
+//     return LV_FS_RES_OK;
+// }
+
+// static lv_fs_res_t spiffs_fs_read(lv_fs_drv_t *drv, void *file_p, void *buf, uint32_t btr, uint32_t *br)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     size_t n = fread(buf, 1, btr, f);
+//     if (br) *br = (uint32_t)n;
+//     return ferror(f) ? LV_FS_RES_FS_ERR : LV_FS_RES_OK;
+// }
+
+// static lv_fs_res_t spiffs_fs_write(lv_fs_drv_t *drv, void *file_p, const void *buf, uint32_t btw, uint32_t *bw)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     size_t n = fwrite(buf, 1, btw, f);
+//     if (bw) *bw = (uint32_t)n;
+//     return ferror(f) ? LV_FS_RES_FS_ERR : LV_FS_RES_OK;
+// }
+
+// static lv_fs_res_t spiffs_fs_seek(lv_fs_drv_t *drv, void *file_p, uint32_t pos, lv_fs_whence_t whence)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     int origin = (whence == LV_FS_SEEK_SET) ? SEEK_SET : (whence == LV_FS_SEEK_CUR ? SEEK_CUR : SEEK_END);
+//     return fseek(f, (long)pos, origin) == 0 ? LV_FS_RES_OK : LV_FS_RES_FS_ERR;
+// }
+
+// static lv_fs_res_t spiffs_fs_tell(lv_fs_drv_t *drv, void *file_p, uint32_t *pos_p)
+// {
+//     LV_UNUSED(drv);
+//     FILE *f = (FILE *)file_p;
+//     long p = ftell(f);
+//     if (p < 0) return LV_FS_RES_FS_ERR;
+//     *pos_p = (uint32_t)p;
+//     return LV_FS_RES_OK;
+// }
+
+// static void lv_fs_register_spiffs(void)
+// {
+//     static lv_fs_drv_t drv;
+//     lv_fs_drv_init(&drv);
+//     drv.letter = 'P';                 // 使用 "P:" 作为盘符 (SPIFFS)
+//     drv.open_cb = spiffs_fs_open;
+//     drv.close_cb = spiffs_fs_close;
+//     drv.read_cb = spiffs_fs_read;
+//     drv.write_cb = spiffs_fs_write;   // 提供写能力
+//     drv.seek_cb = spiffs_fs_seek;
+//     drv.tell_cb = spiffs_fs_tell;
+//     lv_fs_drv_register(&drv);
+// }
 
 
 // 液晶屏初始化
@@ -441,6 +595,13 @@ void bsp_lvgl_start(void)
     /* 初始化LVGL */
     lvgl_port_cfg_t lvgl_cfg = ESP_LVGL_PORT_INIT_CONFIG();
     lvgl_port_init(&lvgl_cfg);
+    lv_extra_init();
+
+    // /* 将 SD FATFS 注册为 LVGL 盘符 S: */
+    //     lv_fs_register_sd();
+
+    // /* 将 SPIFFS 注册为 LVGL 盘符 P: */
+    // lv_fs_register_spiffs();
 
     /* 初始化液晶屏 并添加LVGL接口 */
     disp = bsp_display_lcd_init();
@@ -534,6 +695,8 @@ void bsp_camera_init(void)
     config.pin_pwdn = CAMERA_PIN_PWDN;
     config.pin_reset = CAMERA_PIN_RESET;
     config.xclk_freq_hz = XCLK_FREQ_HZ;
+    // config.pixel_format = PIXFORMAT_JPEG;   // 改为摄像头直接输出 JPEG
+
     config.pixel_format = PIXFORMAT_RGB565;
     config.frame_size = FRAMESIZE_QVGA;
     config.jpeg_quality = JPEG_QUALITY;

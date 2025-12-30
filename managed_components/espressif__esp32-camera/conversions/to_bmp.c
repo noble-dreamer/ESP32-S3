@@ -224,100 +224,167 @@ bool fmt2rgb888(const uint8_t *src_buf, size_t src_len, pixformat_t format, uint
     return true;
 }
 
+// bool fmt2bmp(uint8_t *src, size_t src_len, uint16_t width, uint16_t height, pixformat_t format, uint8_t ** out, size_t * out_len)
+// {
+//     if(format == PIXFORMAT_JPEG) {
+//         return jpg2bmp(src, src_len, out, out_len);
+//     }
+
+//     *out = NULL;
+//     *out_len = 0;
+
+//     int pix_count = width*height;
+
+//     // With BMP, 8-bit greyscale requires a palette.
+//     // For a 640x480 image though, that's a savings
+//     // over going RGB-24.
+//     int bpp = (format == PIXFORMAT_GRAYSCALE) ? 1 : 3;
+//     int palette_size = (format == PIXFORMAT_GRAYSCALE) ? 4 * 256 : 0;
+//     size_t out_size = (pix_count * bpp) + BMP_HEADER_LEN + palette_size;
+//     uint8_t * out_buf = (uint8_t *)_malloc(out_size);
+//     if(!out_buf) {
+//         ESP_LOGE(TAG, "_malloc failed! %u", out_size);
+//         return false;
+//     }
+
+//     out_buf[0] = 'B';
+//     out_buf[1] = 'M';
+//     bmp_header_t * bitmap  = (bmp_header_t*)&out_buf[2];
+//     bitmap->reserved = 0;
+//     bitmap->filesize = out_size;
+//     bitmap->fileoffset_to_pixelarray = BMP_HEADER_LEN + palette_size;
+//     bitmap->dibheadersize = 40;
+//     bitmap->width = width;
+//     bitmap->height = -height;//set negative for top to bottom
+//     bitmap->planes = 1;
+//     bitmap->bitsperpixel = bpp * 8;
+//     bitmap->compression = 0;
+//     bitmap->imagesize = pix_count * bpp;
+//     bitmap->ypixelpermeter = 0x0B13 ; //2835 , 72 DPI
+//     bitmap->xpixelpermeter = 0x0B13 ; //2835 , 72 DPI
+//     bitmap->numcolorspallette = 0;
+//     bitmap->mostimpcolor = 0;
+
+//     uint8_t * palette_buf = out_buf + BMP_HEADER_LEN;
+//     uint8_t * pix_buf = palette_buf + palette_size;
+//     uint8_t * src_buf = src;
+
+//     if (palette_size > 0) {
+//         // Grayscale palette
+//         for (int i = 0; i < 256; ++i) {
+//             for (int j = 0; j < 3; ++j) {
+//                 *palette_buf = i;
+//                 palette_buf++;
+//             }
+//             // Reserved / alpha channel.
+//             *palette_buf = 0;
+//             palette_buf++;
+//         }
+//     }
+
+//     //convert data to RGB888
+//     if(format == PIXFORMAT_RGB888) {
+//         memcpy(pix_buf, src_buf, pix_count*3);
+//     } else if(format == PIXFORMAT_RGB565) {
+//         int i;
+//         uint8_t hb, lb;
+//         for(i=0; i<pix_count; i++) {
+//             hb = *src_buf++;
+//             lb = *src_buf++;
+//             *pix_buf++ = (lb & 0x1F) << 3;
+//             *pix_buf++ = (hb & 0x07) << 5 | (lb & 0xE0) >> 3;
+//             *pix_buf++ = hb & 0xF8;
+//         }
+//     } else if(format == PIXFORMAT_GRAYSCALE) {
+//         memcpy(pix_buf, src_buf, pix_count);
+//     } else if(format == PIXFORMAT_YUV422) {
+//         int i, maxi = pix_count / 2;
+//         uint8_t y0, y1, u, v;
+//         uint8_t r, g, b;
+//         for(i=0; i<maxi; i++) {
+//             y0 = *src_buf++;
+//             u = *src_buf++;
+//             y1 = *src_buf++;
+//             v = *src_buf++;
+
+//             yuv2rgb(y0, u, v, &r, &g, &b);
+//             *pix_buf++ = b;
+//             *pix_buf++ = g;
+//             *pix_buf++ = r;
+
+//             yuv2rgb(y1, u, v, &r, &g, &b);
+//             *pix_buf++ = b;
+//             *pix_buf++ = g;
+//             *pix_buf++ = r;
+//         }
+//     }
+//     *out = out_buf;
+//     *out_len = out_size;
+//     return true;
+// }
 bool fmt2bmp(uint8_t *src, size_t src_len, uint16_t width, uint16_t height, pixformat_t format, uint8_t ** out, size_t * out_len)
 {
-    if(format == PIXFORMAT_JPEG) {
-        return jpg2bmp(src, src_len, out, out_len);
+    if (format != PIXFORMAT_RGB565) {
+        ESP_LOGE(TAG, "fmt2bmp only supports RGB565");
+        return false;
     }
 
     *out = NULL;
     *out_len = 0;
 
-    int pix_count = width*height;
+    const size_t bpp_bytes = 2; // RGB565 -> 16bpp
+    size_t row_size = ((width * bpp_bytes) + 3) & ~3; // 4-byte aligned rows
+    size_t img_size = row_size * height;
+    size_t out_size = img_size + BMP_HEADER_LEN;
 
-    // With BMP, 8-bit greyscale requires a palette.
-    // For a 640x480 image though, that's a savings
-    // over going RGB-24.
-    int bpp = (format == PIXFORMAT_GRAYSCALE) ? 1 : 3;
-    int palette_size = (format == PIXFORMAT_GRAYSCALE) ? 4 * 256 : 0;
-    size_t out_size = (pix_count * bpp) + BMP_HEADER_LEN + palette_size;
-    uint8_t * out_buf = (uint8_t *)_malloc(out_size);
-    if(!out_buf) {
+    uint8_t *out_buf = (uint8_t *)_malloc(out_size);
+    if (!out_buf) {
         ESP_LOGE(TAG, "_malloc failed! %u", out_size);
         return false;
     }
 
     out_buf[0] = 'B';
     out_buf[1] = 'M';
-    bmp_header_t * bitmap  = (bmp_header_t*)&out_buf[2];
+    bmp_header_t *bitmap = (bmp_header_t *)&out_buf[2];
     bitmap->reserved = 0;
     bitmap->filesize = out_size;
-    bitmap->fileoffset_to_pixelarray = BMP_HEADER_LEN + palette_size;
+    bitmap->fileoffset_to_pixelarray = BMP_HEADER_LEN;
     bitmap->dibheadersize = 40;
     bitmap->width = width;
-    bitmap->height = -height;//set negative for top to bottom
+    bitmap->height = height; // bottom-up rows
     bitmap->planes = 1;
-    bitmap->bitsperpixel = bpp * 8;
-    bitmap->compression = 0;
-    bitmap->imagesize = pix_count * bpp;
-    bitmap->ypixelpermeter = 0x0B13 ; //2835 , 72 DPI
-    bitmap->xpixelpermeter = 0x0B13 ; //2835 , 72 DPI
+    bitmap->bitsperpixel = 16;
+    bitmap->compression = 0; // BI_RGB
+    bitmap->imagesize = img_size;
+    bitmap->ypixelpermeter = 0x0B13; // 72 DPI
+    bitmap->xpixelpermeter = 0x0B13;
     bitmap->numcolorspallette = 0;
     bitmap->mostimpcolor = 0;
 
-    uint8_t * palette_buf = out_buf + BMP_HEADER_LEN;
-    uint8_t * pix_buf = palette_buf + palette_size;
-    uint8_t * src_buf = src;
+    uint8_t *pix_buf = out_buf + BMP_HEADER_LEN;
+    const uint8_t *src_buf = src;
 
-    if (palette_size > 0) {
-        // Grayscale palette
-        for (int i = 0; i < 256; ++i) {
-            for (int j = 0; j < 3; ++j) {
-                *palette_buf = i;
-                palette_buf++;
-            }
-            // Reserved / alpha channel.
-            *palette_buf = 0;
-            palette_buf++;
+    for (int y = 0; y < height; y++) {
+        // BMP bottom-up: write the first source row to the last BMP row
+        uint8_t *row_start = pix_buf + (height - 1 - y) * row_size;
+        const uint8_t *src_row = src_buf + y * width * 2;
+        uint8_t *dst = row_start;
+
+        for (int x = 0; x < width; x++) {
+            uint8_t hb = *src_row++;
+            uint8_t lb = *src_row++;
+            // BMP little-endian pixel: low byte first, then high byte
+            *dst++ = lb;
+            *dst++ = hb;
+        }
+
+        // padding to 4-byte boundary
+        size_t padding = row_size - (width * bpp_bytes);
+        while (padding--) {
+            *dst++ = 0;
         }
     }
 
-    //convert data to RGB888
-    if(format == PIXFORMAT_RGB888) {
-        memcpy(pix_buf, src_buf, pix_count*3);
-    } else if(format == PIXFORMAT_RGB565) {
-        int i;
-        uint8_t hb, lb;
-        for(i=0; i<pix_count; i++) {
-            hb = *src_buf++;
-            lb = *src_buf++;
-            *pix_buf++ = (lb & 0x1F) << 3;
-            *pix_buf++ = (hb & 0x07) << 5 | (lb & 0xE0) >> 3;
-            *pix_buf++ = hb & 0xF8;
-        }
-    } else if(format == PIXFORMAT_GRAYSCALE) {
-        memcpy(pix_buf, src_buf, pix_count);
-    } else if(format == PIXFORMAT_YUV422) {
-        int i, maxi = pix_count / 2;
-        uint8_t y0, y1, u, v;
-        uint8_t r, g, b;
-        for(i=0; i<maxi; i++) {
-            y0 = *src_buf++;
-            u = *src_buf++;
-            y1 = *src_buf++;
-            v = *src_buf++;
-
-            yuv2rgb(y0, u, v, &r, &g, &b);
-            *pix_buf++ = b;
-            *pix_buf++ = g;
-            *pix_buf++ = r;
-
-            yuv2rgb(y1, u, v, &r, &g, &b);
-            *pix_buf++ = b;
-            *pix_buf++ = g;
-            *pix_buf++ = r;
-        }
-    }
     *out = out_buf;
     *out_len = out_size;
     return true;
