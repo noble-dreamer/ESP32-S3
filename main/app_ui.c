@@ -15,9 +15,10 @@
 #include "esp_sntp.h"
 #include <ctype.h>
 #include "img_converters.h"  // 位于 esp32-camera 组件
-
+static void set_img_src_from_fs_path(const char *fs_path);
 static const char *TAG = "app_ui";
 // #define LV_USE_GIF 1
+#define START_GIF_PATH "A:/sdcard/tanglong.gif"
 LV_FONT_DECLARE(font_alipuhui20);
 
 lv_obj_t *main_obj;        // 主界面
@@ -38,10 +39,11 @@ void lv_gui_start(void)
 {
     lvgl_port_lock(0);
     // 显示logo
-    LV_IMG_DECLARE(tanglong)
-    // LV_IMG_DECLARE(image_tanglong_img);  // 声明图片
+
+    // LV_IMG_DECLARE(tanglong)
+
     tanglong_img = lv_gif_create(lv_scr_act());        // 创建图片对象
-    lv_gif_set_src(tanglong_img, &tanglong);           // 设置图片对象的图片源
+    lv_gif_set_src(tanglong_img, START_GIF_PATH);           // 设置图片对象的图片源
     lv_obj_align(tanglong_img, LV_ALIGN_CENTER, 0, 0); // 设置图片位置为屏幕正中心
     // lv_img_set_pivot(tanglong_img, 60, 60); // 设置图片围绕自己的中心位置旋转
 
@@ -436,8 +438,8 @@ void app_play_boot_mp3(const char *filepath)
 // 按钮样式相关定义
 typedef struct
 {
-    lv_style_t style_bg;
-    lv_style_t style_focus_no_outline;
+    lv_style_t style_bg;                // 按钮背景样式
+    lv_style_t style_focus_no_outline; // 按钮聚焦无边框样式
 } button_style_t;
 
 static button_style_t g_btn_styles;
@@ -608,12 +610,19 @@ void music_ui(void)
     ui_button_style_init(); // 初始化按键风格
 
     /* 创建播放暂停控制按键 */
+    /*
+    CHECKABLE：按钮内部会在每次点击或编码器确认时自动切换 LV_STATE_CHECKED 开关态，
+    并触发一次 LV_EVENT_VALUE_CHANGED。适合开关类/切换类控件（如播放↔暂停、开↔关）。
+    CLICKABLE：仅表示可点击，事件序列是 PRESSED/RELEASED/CLICKED，
+    需要你自己维护是否“选中”。如果用它做播放/暂停，必须在回调里手动切换状态并管理样式。
+    这里要自动切换播放/暂停，所以用 CHECKABLE 更简洁。
+    */
     btn_play_pause = lv_btn_create(icon_in_obj);
     lv_obj_align(btn_play_pause, LV_ALIGN_CENTER, 0, 40);
     lv_obj_set_size(btn_play_pause, 50, 50);
     lv_obj_set_style_radius(btn_play_pause, 25, LV_STATE_DEFAULT);
     lv_obj_add_flag(btn_play_pause, LV_OBJ_FLAG_CHECKABLE);
-
+    //获得焦点时不显示描边
     lv_obj_add_style(btn_play_pause, &ui_button_styles()->style_focus_no_outline, LV_STATE_FOCUS_KEY);
     lv_obj_add_style(btn_play_pause, &ui_button_styles()->style_focus_no_outline, LV_STATE_FOCUSED);
 
@@ -623,6 +632,7 @@ void music_ui(void)
     lv_obj_center(label_play_pause);
 
     lv_obj_set_user_data(btn_play_pause, (void *)label_play_pause);
+    //对 CHECKABLE 按钮，切换开关态时只发一次 VALUE_CHANGED，不会收到多次 PRESS/RELEASE 组合，回调更干净
     lv_obj_add_event_cb(btn_play_pause, btn_play_pause_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* 创建上一首控制按键 */
@@ -783,7 +793,8 @@ lv_obj_t *sdcard_label;     // SD卡页面标题
 lv_obj_t *sdcard_file_list; // SD卡文件列表
 
 extern sdmmc_card_t *sdmmc_card;
-
+static void image_view_back(void);
+static void gif_view_back(void);
 struct file_path_info
 {
     uint8_t path_index;  // 在第几级目录
@@ -799,6 +810,22 @@ static void file_list_btn_cb(lv_event_t *e);
 // 返回主界面按钮事件处理函数
 static void btn_sdback_cb(lv_event_t *e)
 {
+    //图片查看模式下返回文件列表替换原本的文件返回
+
+    /* 检查是否在图片查看模式 */
+    lv_obj_t *img_container = (lv_obj_t *)lv_obj_get_user_data(icon_in_obj);
+    if (img_container != NULL) {
+        /* 在图片查看模式，返回文件列表 */
+        image_view_back();
+        return;
+    }
+    lv_obj_t *gif_container = (lv_obj_t *)lv_obj_get_user_data(icon_in_obj);
+    if (gif_container != NULL) {
+        /* 在GIF查看模式，返回文件列表 */
+        gif_view_back();
+        return;
+    }
+    
     if (file_path_info.path_index == 0)
     { // 如果当前是根目录
         // 保持SD卡全局挂载，不在此卸载
@@ -843,8 +870,10 @@ static int classify_extension_ci(const char *ext)
         return 1;
     if (!strcmp(buf, "mp4") || !strcmp(buf, "avi"))
         return 2;
-    if (!strcmp(buf, "jpg") || !strcmp(buf, "jpeg") || !strcmp(buf, "png") || !strcmp(buf, "bmp") || !strcmp(buf, "gif"))
+    if (!strcmp(buf, "jpg") || !strcmp(buf, "jpeg") || !strcmp(buf, "png") || !strcmp(buf, "bmp"))
         return 3;
+    if (!strcmp(buf, "gif"))
+        return 4;
     return 0;
 }
 
@@ -880,6 +909,9 @@ esp_err_t list_sdcard_files(char *path)
                     break;
                 case 3:
                     btn = lv_list_add_btn(sdcard_file_list, LV_SYMBOL_IMAGE, (const char *)ent->d_name); // 显示图片文件图标
+                    break;
+                case 4:
+                    btn = lv_list_add_btn(sdcard_file_list, LV_SYMBOL_IMAGE, (const char *)ent->d_name); // 显示GIF文件图标
                     break;
                 default:
                     btn = lv_list_add_btn(sdcard_file_list, LV_SYMBOL_FILE, (const char *)ent->d_name); // 显示普通文件图标
@@ -938,6 +970,115 @@ static void play_file(const char *filepath)
         ESP_LOGE(TAG, "play_file: unable to open '%s'", filepath);
     }
 }
+//================================ 图片查看器 ===========================================
+static void image_viewer_ui(const char *filepath)
+{
+    /* 隐藏文件列表，在其位置显示图片 */
+    lvgl_port_lock(0);
+    if (sdcard_file_list) {
+        //用隐藏功能，退出时世界删除该flag和对象
+        lv_obj_add_flag(sdcard_file_list, LV_OBJ_FLAG_HIDDEN);
+    }
+    
+    /* 创建图片显示容器 - 替换文件列表位置 */
+    lv_obj_t *img_container = lv_obj_create(icon_in_obj);
+    lv_obj_set_size(img_container, 320, 200);
+    lv_obj_align(img_container, LV_ALIGN_TOP_LEFT, 0, 40);
+    lv_obj_set_style_border_width(img_container, 0, 0);
+    lv_obj_set_style_bg_color(img_container, lv_color_hex(0xffffff), 0);
+    lv_obj_set_style_pad_all(img_container, 0, 0);
+    lv_obj_set_user_data(icon_in_obj, (void *)img_container);
+    
+    /* 创建图片对象 */
+    lv_obj_t *img = lv_img_create(img_container);
+    //后面用的
+    lv_img_set_src(img, filepath);
+    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+    lvgl_port_unlock();
+}
+static void img_view_file(const char *filepath)
+{
+    if (!filepath || !*filepath)
+    {
+        ESP_LOGE(TAG, "imgview_file: invalid path");
+        return;
+    }
+    ESP_LOGE(TAG, "imgview_file: %s", filepath);
+    image_viewer_ui(filepath); // 隐藏文件列表并显示图片
+}
+
+/* 返回文件列表视图 */
+static void image_view_back(void)
+{
+    lvgl_port_lock(0);
+    /* 获取并删除图片容器 */
+    lv_obj_t *img_container = (lv_obj_t *)lv_obj_get_user_data(icon_in_obj);
+    if (img_container) {
+        lv_obj_del(img_container);
+        lv_obj_set_user_data(icon_in_obj, NULL);
+    }
+    /* 显示文件列表 */
+    if (sdcard_file_list) {
+        lv_obj_clear_flag(sdcard_file_list, LV_OBJ_FLAG_HIDDEN);
+    }
+    lvgl_port_unlock();
+}
+//================================ ======== ===========================================
+//================================ GIF查看器 ===========================================
+
+static void gif_viewer_ui(const char *filepath)
+{
+    /* 隐藏文件列表，在其位置显示图片 */
+    lvgl_port_lock(0);
+    if (sdcard_file_list) {
+        //用隐藏功能，退出时世界删除该flag和对象
+        lv_obj_add_flag(sdcard_file_list, LV_OBJ_FLAG_HIDDEN);
+    }
+    
+    /* 创建图片显示容器 - 替换文件列表位置 */
+    lv_obj_t *gif_container = lv_obj_create(icon_in_obj);
+    lv_obj_set_size(gif_container, 320, 200);
+    lv_obj_align(gif_container, LV_ALIGN_TOP_LEFT, 0, 40);
+    lv_obj_set_style_border_width(gif_container, 0, 0);
+    lv_obj_set_style_bg_color(gif_container, lv_color_hex(0xffffff), 0);
+    lv_obj_set_style_pad_all(gif_container, 0, 0);
+    lv_obj_set_user_data(icon_in_obj, (void *)gif_container);
+    
+    /* 创建图片对象 */
+    lv_obj_t *gif = lv_gif_create(gif_container);
+    //后面用的
+    lv_gif_set_src(gif, filepath);
+    lv_obj_align(gif, LV_ALIGN_CENTER, 0, 0);
+    lvgl_port_unlock();
+}
+static void gif_view_file(const char *filepath)
+{
+    if (!filepath || !*filepath)
+    {
+        ESP_LOGE(TAG, "gifview_file: invalid path");
+        return;
+    }
+    ESP_LOGE(TAG, "gifview_file: %s", filepath);
+    gif_viewer_ui(filepath); // 隐藏文件列表并显示图片
+}
+
+/* 返回文件列表视图 */
+static void gif_view_back(void)
+{
+    lvgl_port_lock(0);
+    /* 获取并删除图片容器 */
+    lv_obj_t *gif_container = (lv_obj_t *)lv_obj_get_user_data(icon_in_obj);
+    if (gif_container) {
+        lv_obj_del(gif_container);
+        lv_obj_set_user_data(icon_in_obj, NULL);
+    }
+    /* 显示文件列表 */
+    if (sdcard_file_list) {
+        lv_obj_clear_flag(sdcard_file_list, LV_OBJ_FLAG_HIDDEN);
+    }
+    lvgl_port_unlock();
+}
+//================================ ======= ===========================================
 
 // 文件点击 事件处理函数,点击列表项：进入子目录或保持原目录
 static void file_list_btn_cb(lv_event_t *e)
@@ -966,7 +1107,7 @@ static void file_list_btn_cb(lv_event_t *e)
                 ESP_LOGI(TAG, "path_back: %s", file_path_info.path_back);
             }
             return;
-            }
+        }
 
         // 如果是音乐文件：播放选中歌曲
         const char *ext = strrchr(file_name, '.');
@@ -977,6 +1118,39 @@ static void file_list_btn_cb(lv_event_t *e)
             if (cls == 1)
             {
                 play_file(file_path_info.path_now);
+                // 还原路径信息 因为没有进入目录
+                strcpy(file_path_info.path_now, file_path_info.path_back); // 刚刚进入的这个目录路径 变成当前路径
+                char *slash = strrchr(file_path_info.path_back, '/'); // 从后往前查找字符'/'
+                if (slash != NULL)
+                {                  // 如果查找到
+                    *slash = '\0'; // 替换为NULL 表示字符串结束
+                }
+                return;
+            }
+            else if (cls == 3)
+            {
+                ESP_LOGI(TAG, "Image file selected: %s", file_path_info.path_now);
+                /* 使用LVGL FS接口访问图片 */
+                char lv_img_path[140];
+                lv_snprintf(lv_img_path, sizeof(lv_img_path), "A:%s", file_path_info.path_now);
+                img_view_file(lv_img_path); // 查看图片
+
+                // 还原路径信息 因为没有进入目录
+                strcpy(file_path_info.path_now, file_path_info.path_back); // 刚刚进入的这个目录路径 变成当前路径
+                char *slash = strrchr(file_path_info.path_back, '/'); // 从后往前查找字符'/'
+                if (slash != NULL)
+                {                  // 如果查找到
+                    *slash = '\0'; // 替换为NULL 表示字符串结束
+                }
+                return;
+            }
+            else if(cls ==4){
+                ESP_LOGI(TAG, "GIF file selected: %s", file_path_info.path_now);
+                /* 使用LVGL FS接口访问图片 */
+                char lv_gif_path[140];
+                lv_snprintf(lv_gif_path, sizeof(lv_gif_path), "A:%s", file_path_info.path_now);
+                gif_view_file(lv_gif_path); // 查看图片
+
                 // 还原路径信息 因为没有进入目录
                 strcpy(file_path_info.path_now, file_path_info.path_back); // 刚刚进入的这个目录路径 变成当前路径
                 char *slash = strrchr(file_path_info.path_back, '/'); // 从后往前查找字符'/'

@@ -594,7 +594,10 @@ void bsp_lvgl_start(void)
 {
     /* 初始化LVGL */
     lvgl_port_cfg_t lvgl_cfg = ESP_LVGL_PORT_INIT_CONFIG();
+    lvgl_cfg.task_stack = 12288; // bump LVGL task stack to handle GIF decode
     lvgl_port_init(&lvgl_cfg);
+    
+    // 额外组件初始化 SDIO / PNG / GIF 等
     lv_extra_init();
 
     // /* 将 SD FATFS 注册为 LVGL 盘符 S: */
