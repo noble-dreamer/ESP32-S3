@@ -11,6 +11,12 @@ menu "Audio playback"
         help
             Audio player can decode wave files.
 
+    config AUDIO_PLAYER_ENABLE_FLAC
+        bool "Enable FLAC file playback"
+        default y
+        help
+            Audio player can decode FLAC files using components/flac.
+
     config AUDIO_PLAYER_LOG_LEVEL
         int "Audio Player log level (0 none - 3 highest)"
         default 0

@@ -866,7 +866,7 @@ static int classify_extension_ci(const char *ext)
         buf[n] = (char)tolower((unsigned char)ext[n]);
         n++;
     }
-    if (!strcmp(buf, "mp3") || !strcmp(buf, "wav"))
+    if (!strcmp(buf, "mp3") || !strcmp(buf, "wav")|| !strcmp(buf, "flac"))
         return 1;
     if (!strcmp(buf, "mp4") || !strcmp(buf, "avi"))
         return 2;

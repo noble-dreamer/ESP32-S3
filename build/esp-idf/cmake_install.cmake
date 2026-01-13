@@ -472,3 +472,8 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("D:/ESP32/5_14code/14-handheld/build/esp-idf/main/cmake_install.cmake")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/cmake_install.cmake")
+endif()
+

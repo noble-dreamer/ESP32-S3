@@ -723,3 +723,10 @@ D:/ESP32/5_14code/14-handheld/build/esp-idf/main/CMakeFiles/list_install_compone
 D:/ESP32/5_14code/14-handheld/build/esp-idf/main/CMakeFiles/install.dir
 D:/ESP32/5_14code/14-handheld/build/esp-idf/main/CMakeFiles/install/local.dir
 D:/ESP32/5_14code/14-handheld/build/esp-idf/main/CMakeFiles/install/strip.dir
+D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/CMakeFiles/__idf_flac.dir
+D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/CMakeFiles/edit_cache.dir
+D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/CMakeFiles/rebuild_cache.dir
+D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/CMakeFiles/list_install_components.dir
+D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/CMakeFiles/install.dir
+D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/CMakeFiles/install/local.dir
+D:/ESP32/5_14code/14-handheld/build/esp-idf/flac/CMakeFiles/install/strip.dir

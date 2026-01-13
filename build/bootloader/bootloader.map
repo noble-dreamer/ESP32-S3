@@ -5236,7 +5236,7 @@ LOAD d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp3
  *(.jcr)
                 0x000000003fce382c                _data_end = ABSOLUTE (.)
 
-.dram0.rodata   0x000000003fce382c     0x1744
+.dram0.rodata   0x000000003fce382c     0x173c
                 0x000000003fce382c                _rodata_start = ABSOLUTE (.)
  *(.rodata)
  .rodata        0x000000003fce382c        0x8 esp-idf/bootloader_support/libbootloader_support.a(bootloader_clock_init.c.obj)
@@ -5326,58 +5326,58 @@ LOAD d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp3
  .rodata.bootloader_enable_random.str1.1
                 0x000000003fce4d39       0x3d esp-idf/bootloader_support/libbootloader_support.a(bootloader_init.c.obj)
  .rodata.bootloader_print_banner.str1.1
-                0x000000003fce4d76       0xac esp-idf/bootloader_support/libbootloader_support.a(bootloader_init.c.obj)
+                0x000000003fce4d76       0xa6 esp-idf/bootloader_support/libbootloader_support.a(bootloader_init.c.obj)
  .rodata.rtc_clk_xtal_freq_get.str1.1
-                0x000000003fce4e22       0x4e esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
+                0x000000003fce4e1c       0x4e esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
  .rodata.rtc_clk_cpu_freq_get_config.str1.1
-                0x000000003fce4e70       0x3c esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
+                0x000000003fce4e6a       0x3c esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
  .rodata.rtc_clk_cpu_freq_set_config.str1.1
-                0x000000003fce4eac       0x59 esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
+                0x000000003fce4ea6       0x59 esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
  .rodata.__func__$0
-                0x000000003fce4f05       0x17 esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
+                0x000000003fce4eff       0x17 esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk.c.obj)
  .rodata.rtc_clk_init.str1.1
-                0x000000003fce4f1c       0x41 esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk_init.c.obj)
+                0x000000003fce4f16       0x41 esp-idf/esp_hw_support/libesp_hw_support.a(rtc_clk_init.c.obj)
  *(.gnu.linkonce.r.*)
  *(.rodata1)
  *(.sdata2 .sdata2.*)
-                0x000000003fce4f5d                __XT_EXCEPTION_TABLE_ = ABSOLUTE (.)
+                0x000000003fce4f57                __XT_EXCEPTION_TABLE_ = ABSOLUTE (.)
  *(.xt_except_table)
  *(.gcc_except_table)
  *(.gnu.linkonce.e.*)
  *(.gnu.version_r)
  *(.eh_frame)
-                0x000000003fce4f60                . = ((. + 0x3) & 0xfffffffffffffffc)
- *fill*         0x000000003fce4f5d        0x3 
-                0x000000003fce4f60                __init_array_start = ABSOLUTE (.)
+                0x000000003fce4f58                . = ((. + 0x3) & 0xfffffffffffffffc)
+ *fill*         0x000000003fce4f57        0x1 
+                0x000000003fce4f58                __init_array_start = ABSOLUTE (.)
  *crtbegin.*(.ctors)
- .ctors         0x000000003fce4f60        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtbegin.o
+ .ctors         0x000000003fce4f58        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtbegin.o
  *(EXCLUDE_FILE(*crtend.*) .ctors)
  *(SORT_BY_NAME(.ctors.*))
  *(.ctors)
- .ctors         0x000000003fce4f64        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtend.o
-                0x000000003fce4f68                __init_array_end = ABSOLUTE (.)
+ .ctors         0x000000003fce4f5c        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtend.o
+                0x000000003fce4f60                __init_array_end = ABSOLUTE (.)
  *crtbegin.*(.dtors)
- .dtors         0x000000003fce4f68        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtbegin.o
+ .dtors         0x000000003fce4f60        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtbegin.o
  *(EXCLUDE_FILE(*crtend.*) .dtors)
  *(SORT_BY_NAME(.dtors.*))
  *(.dtors)
- .dtors         0x000000003fce4f6c        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtend.o
-                0x000000003fce4f6c                __DTOR_END__
-                0x000000003fce4f70                __XT_EXCEPTION_DESCS_ = ABSOLUTE (.)
+ .dtors         0x000000003fce4f64        0x4 d:/esp32/5_14tools/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/../lib/gcc/xtensa-esp32s3-elf/12.2.0/no-rtti/crtend.o
+                0x000000003fce4f64                __DTOR_END__
+                0x000000003fce4f68                __XT_EXCEPTION_DESCS_ = ABSOLUTE (.)
  *(.xt_except_desc)
  *(.gnu.linkonce.h.*)
-                0x000000003fce4f70                __XT_EXCEPTION_DESCS_END__ = ABSOLUTE (.)
+                0x000000003fce4f68                __XT_EXCEPTION_DESCS_END__ = ABSOLUTE (.)
  *(.xt_except_desc_end)
  *(.dynamic)
  *(.gnu.version_d)
-                0x000000003fce4f70                _rodata_end = ABSOLUTE (.)
-                0x000000003fce4f70                _lit4_start = ABSOLUTE (.)
+                0x000000003fce4f68                _rodata_end = ABSOLUTE (.)
+                0x000000003fce4f68                _lit4_start = ABSOLUTE (.)
  *(*.lit4)
  *(.lit4.*)
  *(.gnu.linkonce.lit4.*)
-                0x000000003fce4f70                _lit4_end = ABSOLUTE (.)
-                0x000000003fce4f70                . = ALIGN (0x4)
-                0x000000003fce4f70                _dram_end = ABSOLUTE (.)
+                0x000000003fce4f68                _lit4_end = ABSOLUTE (.)
+                0x000000003fce4f68                . = ALIGN (0x4)
+                0x000000003fce4f68                _dram_end = ABSOLUTE (.)
 
 .iram.text      0x00000000403c9704      0xbfd
                 0x00000000403c9704                _stext = .

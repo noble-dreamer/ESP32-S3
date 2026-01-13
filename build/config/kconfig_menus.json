@@ -31380,6 +31380,16 @@
                     {
                         "children": [],
                         "depends_on": null,
+                        "help": "Audio player can decode FLAC files using components/flac.",
+                        "id": "AUDIO_PLAYER_ENABLE_FLAC",
+                        "name": "AUDIO_PLAYER_ENABLE_FLAC",
+                        "range": null,
+                        "title": "Enable FLAC file playback",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
                         "help": "Specify the verbosity of Audio Player log output.",
                         "id": "AUDIO_PLAYER_LOG_LEVEL",
                         "name": "AUDIO_PLAYER_LOG_LEVEL",
