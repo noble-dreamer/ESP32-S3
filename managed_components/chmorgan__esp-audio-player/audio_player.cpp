@@ -38,6 +38,9 @@
 
 #include "audio_wav.h"
 #include "audio_mp3.h"
+#if defined(CONFIG_AUDIO_PLAYER_ENABLE_FLAC)
+#include "audio_flac.h"
+#endif
 
 static const char *TAG = "audio";
 
@@ -64,7 +67,10 @@ typedef enum {
     FILE_TYPE_MP3,
 #endif
 #if defined(CONFIG_AUDIO_PLAYER_ENABLE_WAV)
-    FILE_TYPE_WAV
+    FILE_TYPE_WAV,
+#endif
+#if defined(CONFIG_AUDIO_PLAYER_ENABLE_FLAC)
+    FILE_TYPE_FLAC,
 #endif
 } FILE_TYPE;
 
@@ -94,6 +100,10 @@ typedef struct audio_instance {
 #if defined(CONFIG_AUDIO_PLAYER_ENABLE_MP3)
     HMP3Decoder mp3_decoder;
     mp3_instance mp3_data;
+#endif
+
+#if defined(CONFIG_AUDIO_PLAYER_ENABLE_FLAC)
+    flac_instance flac_data;
 #endif
 } audio_instance_t;
 
@@ -192,6 +202,9 @@ static void audio_instance_init(audio_instance_t &i) {
     i.s_audio_cb = NULL;
     i.audio_cb_usrt_ctx = NULL;
     i.state = AUDIO_PLAYER_STATE_IDLE;
+    #if defined(CONFIG_AUDIO_PLAYER_ENABLE_FLAC)
+    flac_instance_init(&i.flac_data);
+    #endif
 }
 
 static esp_err_t mono_to_stereo(uint32_t output_bits_per_sample, decode_data &adata)
@@ -271,6 +284,16 @@ static esp_err_t aplay_file(audio_instance_t *i, FILE *fp)
     }
 #endif
 
+#if defined(CONFIG_AUDIO_PLAYER_ENABLE_FLAC)
+    if(file_type == FILE_TYPE_UNKNOWN)
+    {
+        if(is_flac(fp, &i->output, &i->flac_data)) {
+            file_type = FILE_TYPE_FLAC;
+            LOGI_1("file is flac");
+        }
+    }
+#endif
+
     // cppcheck-suppress knownConditionTrueFalse
     if(file_type == FILE_TYPE_UNKNOWN) {
         ESP_LOGE(TAG, "unknown file type, cleaning up");
@@ -339,6 +362,11 @@ static esp_err_t aplay_file(audio_instance_t *i, FILE *fp)
 #if defined(CONFIG_AUDIO_PLAYER_ENABLE_WAV)
             case FILE_TYPE_WAV:
                 decode_status = decode_wav(fp, &i->output, &i->wav_data);
+                break;
+#endif
+#if defined(CONFIG_AUDIO_PLAYER_ENABLE_FLAC)
+            case FILE_TYPE_FLAC:
+                decode_status = decode_flac(fp, &i->output, &i->flac_data);
                 break;
 #endif
             case FILE_TYPE_UNKNOWN:
@@ -524,6 +552,10 @@ static void cleanup_memory(audio_instance_t &i)
     if(i.mp3_data.data_buf) free(i.mp3_data.data_buf);
 #endif
     if(i.output.samples) free(i.output.samples);
+
+    #if defined(CONFIG_AUDIO_PLAYER_ENABLE_FLAC)
+    flac_instance_free(&i.flac_data);
+    #endif
 
     vQueueDelete(i.event_queue);
 }
